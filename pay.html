@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chia Tiền Nhóm</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .part-check:checked + label {
+      background-color: #0a0a0a;
+      color: #fff;
+      border-color: #0a0a0a;
+    }
+    .editing {
+      border-color: #3b82f6 !important;
+      background: #f8faff !important;
+    }
+    .toast {
+      animation: slideUp .3s ease, fadeOut .3s ease 2s forwards;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes fadeOut { to { opacity: 0; transform: translateY(8px) } }
+    * { -webkit-tap-highlight-color: transparent; }
+    input, select, button { transition: all .15s ease; }
+    ::-webkit-scrollbar { height: 3px }
+    ::-webkit-scrollbar-track { background: #f1f5f9 }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px }
+  </style>
+</head>
+<body class="bg-neutral-50 text-neutral-950 font-sans antialiased min-h-screen">
+
+<!-- Toast -->
+<div id="toastContainer" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center pointer-events-none"></div>
+
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 pb-24">
+
+  <!-- HEADER -->
+  <header class="mb-8 sm:mb-10 flex justify-between items-end border-b border-neutral-200 pb-4">
+    <div>
+      <h1 class="text-base sm:text-lg font-black uppercase tracking-[.15em] text-black">Chia Tiền Nhóm</h1>
+      <p class="text-[10px] text-neutral-500 font-medium tracking-wide mt-0.5">Tính toán minh bạch, nhanh gọn</p>
+    </div>
+    <button onclick="clearAll()" class="text-[10px] text-neutral-500 uppercase font-bold hover:text-red-600 transition-colors px-2 py-1">Xóa sạch</button>
+  </header>
+
+  <!-- 2-COL LAYOUT -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+
+    <!-- ========== CỘT TRÁI ========== -->
+    <div class="space-y-6">
+
+      <!-- THÀNH VIÊN -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest">Thành viên
+            <span id="userCount" class="text-neutral-400 font-mono ml-1">0</span>
+          </h2>
+        </div>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="newName" placeholder="Nhập tên..."
+                 onkeydown="if(event.key==='Enter')addUser()"
+                 class="flex-1 bg-white border border-neutral-200 rounded-lg px-3 py-2 text-sm font-medium outline-none
+                                   focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900/10 placeholder:text-neutral-400 text-neutral-950">
+          <button onclick="addUser()" class="bg-neutral-900 text-white px-4 rounded-lg font-bold text-[11px] uppercase
+                            hover:bg-neutral-700 active:scale-[.97] transition-all">Thêm</button>
+        </div>
+        <div id="userBadgeContainer" class="flex flex-wrap gap-1.5"></div>
+      </section>
+
+      <!-- FORM NHẬP -->
+      <section id="inputForm" class="bg-white p-5 rounded-xl border border-neutral-200 transition-all">
+        <input type="hidden" id="editId" value="">
+
+        <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest mb-4">Nhập giao dịch</h2>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold uppercase mb-1 text-neutral-700">Số tiền</label>
+              <input type="text" id="amountDisplay" oninput="formatCurrency(this)" placeholder="0"
+                     class="w-full bg-neutral-50 border border-neutral-200 rounded-lg p-2.5 outline-none
+                                           focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900/10
+                                           text-xl font-mono font-bold placeholder:text-neutral-300 text-neutral-950">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase mb-1 text-neutral-700">Nội dung</label>
+              <input type="text" id="category" placeholder="Ăn sáng, vé xe..."
+                     class="w-full bg-neutral-50 border border-neutral-200 rounded-lg p-2.5 outline-none
+                                           focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900/10
+                                           text-sm font-medium placeholder:text-neutral-400 text-neutral-950">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase mb-1 text-neutral-700">Người trả</label>
+            <select id="payerSelect" class="w-full border border-neutral-200 rounded-lg p-2.5 outline-none bg-neutral-50
+                                focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900/10
+                                font-semibold text-sm cursor-pointer text-neutral-950"></select>
+          </div>
+
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="text-[10px] font-bold uppercase text-neutral-700">Người cùng chia</label>
+              <div class="flex gap-1">
+                <button onclick="selectAll(true)" class="text-[9px] uppercase font-bold text-neutral-500 hover:text-black px-1.5 py-0.5 rounded transition-colors">Chọn hết</button>
+                <span class="text-neutral-300">|</span>
+                <button onclick="selectAll(false)" class="text-[9px] uppercase font-bold text-neutral-500 hover:text-black px-1.5 py-0.5 rounded transition-colors">Bỏ hết</button>
+              </div>
+            </div>
+            <div id="participantPick" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-5">
+          <button id="submitBtn" onclick="saveTransaction()"
+                  class="flex-1 bg-neutral-900 text-white font-bold py-3 rounded-lg hover:bg-neutral-700
+                                   active:scale-[.98] transition-all uppercase tracking-widest text-[11px]">
+            Lưu giao dịch
+          </button>
+          <button id="cancelEditBtn" onclick="resetForm()"
+                  class="hidden bg-neutral-100 text-neutral-600 font-bold px-4 rounded-lg uppercase text-[10px]
+                                   hover:bg-neutral-200 transition-all">Hủy</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== CỘT PHẢI ========== -->
+    <div class="space-y-6">
+
+      <!-- BẢNG KÊ -->
+      <section>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest">Bảng kê
+            <span id="txnCount" class="text-neutral-400 font-mono ml-1">0</span>
+          </h2>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-neutral-200 bg-white">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+            <tr class="border-b border-neutral-100 text-[10px] text-neutral-600 uppercase font-bold tracking-wider">
+              <th class="p-3">Nội dung</th>
+              <th class="p-3">Trả bởi</th>
+              <th class="p-3 hidden sm:table-cell">Chia cho</th>
+              <th class="p-3 text-right">Số tiền</th>
+              <th class="p-3 w-8"></th>
+            </tr>
+            </thead>
+            <tbody id="historyTable" class="divide-y divide-neutral-50"></tbody>
+          </table>
+          <div id="emptyTable" class="hidden py-10 text-center">
+            <p class="text-xs text-neutral-400 font-medium">Chưa có giao dịch nào</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TỔNG -->
+      <div class="flex justify-between items-center px-4 py-3 bg-white rounded-xl border border-neutral-200">
+        <div>
+          <span class="text-[10px] font-bold uppercase text-neutral-600 tracking-widest block">Tổng chi</span>
+          <span class="text-[10px] text-neutral-500 font-mono" id="txnSummary"></span>
+        </div>
+        <span id="totalDisplay" class="text-2xl font-mono font-bold text-black">0 <span class="text-xs text-neutral-500 font-sans">VND</span></span>
+      </div>
+
+      <!-- KẾT QUẢ -->
+      <section>
+        <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest mb-3">Kết quả thanh toán</h2>
+        <div id="finalSettlement" class="space-y-1.5"></div>
+        <div id="emptySettlement" class="hidden py-8 text-center bg-white rounded-xl border border-dashed border-neutral-200">
+          <p class="text-xs text-neutral-500 font-medium">Không ai nợ ai</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+  let users = JSON.parse(localStorage.getItem('money_users_v5')) || [];
+  let transactions = JSON.parse(localStorage.getItem('money_txns_v5')) || [];
+
+  function showToast(msg, type = 'info') {
+    const el = document.createElement('div');
+    const bg = { success: 'bg-emerald-700', error: 'bg-red-700', info: 'bg-neutral-800', warning: 'bg-amber-600' };
+    el.className = `toast ${bg[type] || bg.info} text-white px-5 py-2.5 rounded-lg text-[11px] font-semibold shadow-xl pointer-events-auto`;
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 2300);
+  }
+
+  function formatCurrency(input) {
+    let v = input.value.replace(/\D/g, "");
+    input.value = v.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
+  function addUser() {
+    const input = document.getElementById('newName');
+    const name = input.value.trim();
+    if (!name) return showToast('Nhập tên thành viên', 'warning');
+    if (users.includes(name)) return showToast(`"${name}" đã có`, 'warning');
+    users.push(name);
+    input.value = '';
+    input.focus();
+    saveAndRender();
+    showToast(`Đã thêm ${name}`, 'success');
+  }
+
+  function removeUser(name) {
+    if (confirm(`Xóa "${name}"?`)) {
+      users = users.filter(u => u !== name);
+      saveAndRender();
+    }
+  }
+
+  function selectAll(check) {
+    document.querySelectorAll('.part-check').forEach(cb => cb.checked = check);
+  }
+
+  function saveAndRender() {
+    localStorage.setItem('money_users_v5', JSON.stringify(users));
+    localStorage.setItem('money_txns_v5', JSON.stringify(transactions));
+    render();
+  }
+
+  function saveTransaction() {
+    const editId = document.getElementById('editId').value;
+    const amount = parseFloat(document.getElementById('amountDisplay').value.replace(/\s/g, ""));
+    const category = document.getElementById('category').value.trim() || "Chi tiêu";
+    const payer = document.getElementById('payerSelect').value;
+    const selected = Array.from(document.querySelectorAll('.part-check:checked')).map(cb => cb.value);
+
+    if (!amount || isNaN(amount)) return showToast('Nhập số tiền', 'error');
+    if (!payer) return showToast('Chọn người trả', 'error');
+    if (!selected.length) return showToast('Chọn người cùng chia', 'error');
+
+    if (editId) {
+      const i = transactions.findIndex(t => t.id == editId);
+      if (i !== -1) transactions[i] = { ...transactions[i], amount, category, payer, participants: selected };
+      showToast('Đã cập nhật', 'success');
+    } else {
+      transactions.push({ amount, category, payer, participants: selected, id: Date.now() });
+      showToast(`${category} — ${amount.toLocaleString()}đ`, 'success');
+    }
+    resetForm();
+    saveAndRender();
+  }
+
+  function editTransaction(id) {
+    const t = transactions.find(x => x.id == id);
+    if (!t) return;
+    document.getElementById('editId').value = t.id;
+    document.getElementById('amountDisplay').value = t.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    document.getElementById('category').value = t.category;
+    render();
+    document.getElementById('payerSelect').value = t.payer;
+    selectAll(false);
+    t.participants.forEach(p => { const el = document.getElementById(`p-${p}`); if (el) el.checked = true; });
+    document.getElementById('inputForm').classList.add('editing');
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Cập nhật';
+    btn.classList.replace('bg-neutral-900', 'bg-blue-600');
+    document.getElementById('cancelEditBtn').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function deleteTransaction(id) {
+    if (confirm("Xóa giao dịch này?")) {
+      transactions = transactions.filter(t => t.id !== id);
+      saveAndRender();
+      showToast('Đã xóa', 'info');
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('editId').value = "";
+    document.getElementById('amountDisplay').value = "";
+    document.getElementById('category').value = "";
+    selectAll(false);
+    document.getElementById('inputForm').classList.remove('editing');
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Lưu giao dịch';
+    btn.classList.replace('bg-blue-600', 'bg-neutral-900');
+    document.getElementById('cancelEditBtn').classList.add('hidden');
+  }
+
+  function clearAll() {
+    if (confirm("Xóa tất cả dữ liệu?")) {
+      users = []; transactions = [];
+      saveAndRender();
+      showToast('Đã xóa sạch', 'info');
+    }
+  }
+
+  function avatarColor(name) {
+    const c = ['bg-blue-700','bg-emerald-700','bg-violet-700','bg-rose-700','bg-amber-700','bg-cyan-700','bg-pink-700','bg-teal-700','bg-indigo-700','bg-orange-700'];
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+    return c[Math.abs(h) % c.length];
+  }
+
+  function render() {
+    document.getElementById('userCount').textContent = users.length;
+
+    const bc = document.getElementById('userBadgeContainer');
+    bc.innerHTML = users.length === 0
+      ? '<p class="text-[11px] text-neutral-400">Chưa có thành viên</p>'
+      : users.map(u => `
+                    <span class="group inline-flex items-center gap-1.5 bg-white border border-neutral-200 pl-1 pr-2 py-1 rounded-full text-[11px] font-semibold
+                                 hover:border-neutral-400 transition-all">
+                        <span class="w-5 h-5 ${avatarColor(u)} rounded-full text-white text-[9px] font-bold flex items-center justify-center uppercase shrink-0">${u[0]}</span>
+                        <span class="text-neutral-900">${u}</span>
+                        <button onclick="removeUser('${u}')" class="text-neutral-300 hover:text-red-600 text-sm leading-none ml-0.5 transition-colors">×</button>
+                    </span>
+                `).join('');
+
+    const ps = document.getElementById('payerSelect');
+    ps.innerHTML = users.length
+      ? users.map(u => `<option value="${u}">${u}</option>`).join('')
+      : '<option value="">Thêm thành viên trước</option>';
+
+    const pp = document.getElementById('participantPick');
+    pp.innerHTML = users.length === 0
+      ? '<p class="text-[10px] text-neutral-400">—</p>'
+      : users.map(u => `
+                    <input type="checkbox" id="p-${u}" value="${u}" class="part-check hidden">
+                    <label for="p-${u}" class="border border-neutral-200 px-3 py-1.5 rounded-full text-[10px] font-bold cursor-pointer
+                           transition-all uppercase hover:border-neutral-400 select-none active:scale-[.96] text-neutral-800">${u}</label>
+                `).join('');
+
+    const tb = document.getElementById('historyTable');
+    const et = document.getElementById('emptyTable');
+    document.getElementById('txnCount').textContent = transactions.length;
+    let total = 0;
+
+    if (!transactions.length) {
+      tb.innerHTML = '';
+      et.classList.remove('hidden');
+    } else {
+      et.classList.add('hidden');
+      tb.innerHTML = transactions.map(t => {
+        total += t.amount;
+        const isAll = t.participants.length === users.length && users.length > 0;
+        const share = Math.round(t.amount / t.participants.length);
+        return `
+                        <tr class="hover:bg-neutral-50/80 group">
+                            <td class="p-3">
+                                <button onclick="editTransaction(${t.id})" class="text-left font-semibold text-neutral-900 hover:text-blue-700 transition-colors text-xs">${t.category}</button>
+                                <span class="block text-[9px] text-neutral-500 font-mono mt-px">${share.toLocaleString()}đ / người</span>
+                            </td>
+                            <td class="p-3">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="w-4 h-4 ${avatarColor(t.payer)} rounded-full text-white text-[8px] font-bold flex items-center justify-center uppercase shrink-0">${t.payer[0]}</span>
+                                    <span class="font-bold text-neutral-800 text-[11px] uppercase">${t.payer}</span>
+                                </span>
+                            </td>
+                            <td class="p-3 text-[10px] text-neutral-600 hidden sm:table-cell">${isAll ? '<span class="font-bold text-neutral-800">Tất cả</span>' : t.participants.join(', ')}</td>
+                            <td class="p-3 text-right font-mono font-bold text-sm text-black">${t.amount.toLocaleString().replace(/,/g, " ")}</td>
+                            <td class="p-3 text-center">
+                                <button onclick="deleteTransaction(${t.id})" class="text-neutral-300 hover:text-red-600 text-base leading-none transition-colors opacity-0 group-hover:opacity-100">×</button>
+                            </td>
+                        </tr>`;
+      }).reverse().join('');
+    }
+
+    document.getElementById('totalDisplay').innerHTML = `${total.toLocaleString().replace(/,/g, " ")} <span class="text-xs text-neutral-500 font-sans">VND</span>`;
+    document.getElementById('txnSummary').textContent = transactions.length ? `${transactions.length} giao dịch` : '';
+
+    calcSettle();
+  }
+
+  function calcSettle() {
+    let bal = {};
+    users.forEach(u => bal[u] = 0);
+    transactions.forEach(t => {
+      bal[t.payer] = (bal[t.payer] || 0) + t.amount;
+      const s = t.amount / t.participants.length;
+      t.participants.forEach(p => bal[p] = (bal[p] || 0) - s);
+    });
+
+    let debtors = [], creditors = [];
+    for (let n in bal) {
+      if (bal[n] < -1) debtors.push({ name: n, amount: Math.abs(bal[n]) });
+      else if (bal[n] > 1) creditors.push({ name: n, amount: bal[n] });
+    }
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    const sd = document.getElementById('finalSettlement');
+    const es = document.getElementById('emptySettlement');
+    sd.innerHTML = '';
+    let has = false;
+
+    debtors.forEach(d => {
+      let owed = d.amount;
+      creditors.forEach(c => {
+        if (owed <= 1 || c.amount <= 1) return;
+        let pay = Math.min(owed, c.amount);
+        has = true;
+        sd.innerHTML += `
+                        <div class="flex justify-between items-center bg-neutral-900 text-white p-4 rounded-lg">
+                            <div class="flex items-center gap-2 text-xs sm:text-sm">
+                                <span class="w-6 h-6 ${avatarColor(d.name)} rounded-full text-white text-[9px] font-bold flex items-center justify-center uppercase">${d.name[0]}</span>
+                                <span class="font-bold uppercase">${d.name}</span>
+                                <span class="text-neutral-500 mx-1">&rarr;</span>
+                                <span class="w-6 h-6 ${avatarColor(c.name)} rounded-full text-white text-[9px] font-bold flex items-center justify-center uppercase">${c.name[0]}</span>
+                                <span class="font-bold uppercase">${c.name}</span>
+                            </div>
+                            <span class="font-mono font-bold text-amber-400 text-sm sm:text-base whitespace-nowrap ml-3">${Math.round(pay).toLocaleString().replace(/,/g, " ")}đ</span>
+                        </div>`;
+        owed -= pay;
+        c.amount -= pay;
+      });
+    });
+
+    if (!has && transactions.length > 0) es.classList.remove('hidden');
+    else es.classList.add('hidden');
+  }
+
+  render();
+</script>
+</body>
+</html>
