@@ -156,7 +156,7 @@
             <tr class="border-b border-neutral-100 text-[10px] text-neutral-600 uppercase font-bold tracking-wider">
               <th class="p-3">Nội dung</th>
               <th class="p-3">Trả bởi</th>
-              <th class="p-3 hidden sm:table-cell">Chia cho</th>
+              <th class="p-3">Chia cho</th>
               <th class="p-3 text-right">Số tiền</th>
               <th class="p-3 w-8"></th>
             </tr>
@@ -368,7 +368,7 @@
                                     <span class="font-bold text-neutral-800 text-[11px] uppercase">${t.payer}</span>
                                 </span>
                             </td>
-                            <td class="p-3 text-[10px] text-neutral-600 hidden sm:table-cell">${isAll ? '<span class="font-bold text-neutral-800">Tất cả</span>' : t.participants.join(', ')}</td>
+                            <td class="p-3 text-[10px] text-neutral-600">${isAll ? '<span class="font-bold text-neutral-800">Tất cả</span>' : t.participants.join(', ')}</td>
                             <td class="p-3 text-right font-mono font-bold text-sm text-black">${t.amount.toLocaleString().replace(/,/g, " ")}</td>
                             <td class="p-3 text-center">
                                 <button onclick="deleteTransaction(${t.id})" class="text-neutral-300 hover:text-red-600 text-base leading-none transition-colors opacity-0 group-hover:opacity-100">×</button>
