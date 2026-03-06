@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chia Tiền Nhóm</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <script>
@@ -55,7 +56,11 @@
       <h1 class="text-base sm:text-lg font-black uppercase tracking-[.15em] text-black">Chia Tiền Nhóm</h1>
       <p class="text-[10px] text-neutral-500 font-medium tracking-wide mt-0.5">Tính toán minh bạch, nhanh gọn</p>
     </div>
-    <button onclick="clearAll()" class="text-[10px] text-neutral-500 uppercase font-bold hover:text-red-600 transition-colors px-2 py-1">Xóa sạch</button>
+    <div class="flex items-center gap-2">
+      <button onclick="captureScreen()" class="text-[10px] text-neutral-500 uppercase font-bold hover:text-blue-600 transition-colors px-2 py-1">📸 Chụp ảnh</button>
+      <span class="text-neutral-300">|</span>
+      <button onclick="clearAll()" class="text-[10px] text-neutral-500 uppercase font-bold hover:text-red-600 transition-colors px-2 py-1">Xóa sạch</button>
+    </div>
   </header>
 
   <!-- 2-COL LAYOUT -->
@@ -304,6 +309,23 @@
       saveAndRender();
       showToast('Đã xóa sạch', 'info');
     }
+  }
+
+  function captureScreen() {
+    showToast('Đang chụp...', 'info');
+    const target = document.querySelector('.max-w-6xl');
+    html2canvas(target, {
+      backgroundColor: '#fafafa',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `chia-tien_${new Date().toISOString().slice(0,10)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('Đã tải ảnh!', 'success');
+    }).catch(() => showToast('Lỗi chụp ảnh', 'error'));
   }
 
   function avatarColor(name) {
