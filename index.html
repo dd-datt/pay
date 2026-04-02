@@ -7,14 +7,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           fontFamily: {
             sans: ['Inter', 'system-ui', 'sans-serif'],
-            mono: ['JetBrains Mono', 'Courier New', 'monospace'],
           }
         }
       }
@@ -73,7 +72,7 @@
       <section>
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest">Thành viên
-            <span id="userCount" class="text-neutral-400 font-mono ml-1">0</span>
+            <span id="userCount" class="text-neutral-400 font-bold ml-1">0</span>
           </h2>
         </div>
         <div class="flex gap-2 mb-3">
@@ -97,17 +96,17 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[10px] font-bold uppercase mb-1 text-neutral-700">Số tiền</label>
-              <input type="text" id="amountDisplay" oninput="formatCurrency(this)" placeholder="0"
-                     class="w-full bg-neutral-50 border border-neutral-200 rounded-lg p-2.5 outline-none
+              <input type="text" id="amountDisplay" oninput="formatCurrency(this)" placeholder="Nhập số tiền..."
+                     class="w-full h-11 bg-neutral-50 border border-neutral-200 rounded-lg px-3 outline-none
                                            focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900/10
-                                           text-xl font-mono font-bold placeholder:text-neutral-300 text-neutral-950">
+                                           text-lg font-bold placeholder:text-neutral-400 placeholder:text-[10px] text-neutral-950">
             </div>
             <div>
               <label class="block text-[10px] font-bold uppercase mb-1 text-neutral-700">Nội dung</label>
               <input type="text" id="category" placeholder="Ăn sáng, vé xe..."
-                     class="w-full bg-neutral-50 border border-neutral-200 rounded-lg p-2.5 outline-none
+                     class="w-full h-11 bg-neutral-50 border border-neutral-200 rounded-lg px-3 outline-none
                                            focus:border-neutral-900 focus:bg-white focus:ring-1 focus:ring-neutral-900/10
-                                           text-sm font-medium placeholder:text-neutral-400 text-neutral-950">
+                                           text-sm font-medium placeholder:text-neutral-400 placeholder:text-[10px] text-neutral-950">
             </div>
           </div>
 
@@ -151,7 +150,7 @@
       <section>
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-[10px] font-extrabold uppercase text-neutral-600 tracking-widest">Bảng kê
-            <span id="txnCount" class="text-neutral-400 font-mono ml-1">0</span>
+            <span id="txnCount" class="text-neutral-400 font-bold ml-1">0</span>
           </h2>
         </div>
 
@@ -178,9 +177,9 @@
       <div class="flex justify-between items-center px-4 py-3 bg-white rounded-xl border border-neutral-200">
         <div>
           <span class="text-[10px] font-bold uppercase text-neutral-600 tracking-widest block">Tổng chi</span>
-          <span class="text-[10px] text-neutral-500 font-mono" id="txnSummary"></span>
+          <span class="text-[10px] text-neutral-500 font-bold" id="txnSummary"></span>
         </div>
-        <span id="totalDisplay" class="text-2xl font-mono font-bold text-black">0 <span class="text-xs text-neutral-500 font-sans">VND</span></span>
+        <span id="totalDisplay" class="text-2xl font-bold text-black">0 <span class="text-xs text-neutral-500 font-sans">VND</span></span>
       </div>
 
       <!-- KẾT QUẢ -->
@@ -312,20 +311,37 @@
   }
 
   function captureScreen() {
-    showToast('Đang chụp...', 'info');
+    showToast('Đang chuẩn bị...', 'info');
     const target = document.querySelector('.max-w-6xl');
-    html2canvas(target, {
-      backgroundColor: '#fafafa',
-      scale: 2,
-      useCORS: true,
-      logging: false
-    }).then(canvas => {
-      const link = document.createElement('a');
-      link.download = `chia-tien_${new Date().toISOString().slice(0,10)}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      showToast('Đã tải ảnh!', 'success');
-    }).catch(() => showToast('Lỗi chụp ảnh', 'error'));
+    
+    // Đảm bảo font chữ đã load xong trước khi chụp
+    document.fonts.ready.then(() => {
+      html2canvas(target, {
+        backgroundColor: '#fafafa',
+        scale: 3,
+        useCORS: true,
+        logging: false,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: -window.scrollY,
+        onclone: (clonedDoc) => {
+          const clonedTarget = clonedDoc.querySelector('.max-w-6xl');
+          if (clonedTarget) {
+            clonedTarget.style.margin = '0 auto';
+            clonedTarget.style.padding = '20px';
+          }
+        }
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `chia-tien_${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('Đã tải ảnh!', 'success');
+      }).catch(err => {
+        console.error(err);
+        showToast('Lỗi chụp ảnh', 'error');
+      });
+    });
   }
 
   function avatarColor(name) {
@@ -382,7 +398,7 @@
                         <tr class="hover:bg-neutral-50/80 group">
                             <td class="p-3">
                                 <button onclick="editTransaction(${t.id})" class="text-left font-semibold text-neutral-900 hover:text-blue-700 transition-colors text-xs">${t.category}</button>
-                                <span class="block text-[9px] text-neutral-500 font-mono mt-px">${share.toLocaleString()}đ / người</span>
+                                <span class="block text-[9px] text-neutral-500 font-bold mt-px">${share.toLocaleString()}đ / người</span>
                             </td>
                             <td class="p-3">
                                 <span class="inline-flex items-center gap-1">
@@ -391,7 +407,7 @@
                                 </span>
                             </td>
                             <td class="p-3 text-[10px] text-neutral-600">${isAll ? '<span class="font-bold text-neutral-800">Tất cả</span>' : t.participants.join(', ')}</td>
-                            <td class="p-3 text-right font-mono font-bold text-sm text-black">${t.amount.toLocaleString().replace(/,/g, " ")}</td>
+                            <td class="p-3 text-right font-bold text-sm text-black">${t.amount.toLocaleString().replace(/,/g, " ")}</td>
                             <td class="p-3 text-center">
                                 <button onclick="deleteTransaction(${t.id})" class="text-neutral-300 hover:text-red-600 text-base leading-none transition-colors opacity-0 group-hover:opacity-100">×</button>
                             </td>
@@ -442,7 +458,7 @@
                                 <span class="w-6 h-6 ${avatarColor(c.name)} rounded-full text-white text-[9px] font-bold flex items-center justify-center uppercase">${c.name[0]}</span>
                                 <span class="font-bold uppercase">${c.name}</span>
                             </div>
-                            <span class="font-mono font-bold text-amber-400 text-sm sm:text-base whitespace-nowrap ml-3">${Math.round(pay).toLocaleString().replace(/,/g, " ")}đ</span>
+                             <span class="font-bold text-amber-400 text-sm sm:text-base whitespace-nowrap ml-3">${Math.round(pay).toLocaleString().replace(/,/g, " ")}đ</span>
                         </div>`;
         owed -= pay;
         c.amount -= pay;
